@@ -68,24 +68,19 @@
     ];
 
     function ExpenseTracker(){
+      // ---- Config ----
+      const exchangeRate = 102; // 1 EUR = 102 INR
+
       // ---- Initial Data ----
       const getInitialExpenses = () => {
+        // Load from localStorage and DO NOT reset amounts
         const saved = JSON.parse(localStorage.getItem('expenseTrackerData') || 'null');
         if (saved) {
-          // Preserve categories + budgets (+color if any), but reset amounts to zero.
-          const cleaned = {};
-          Object.keys(saved).forEach(k => {
-            const e = saved[k];
-            cleaned[k] = {
-              eur: 0,
-              inr: 0,
-              budgetEur: typeof e.budgetEur === 'number' ? e.budgetEur : 0,
-              budgetInr: typeof e.budgetInr === 'number' ? e.budgetInr : 0,
-              color: ('color' in e) ? e.color : null
-            };
-          });
-          return cleaned;
+          // Ensure color exists for forward-compat
+          Object.keys(saved).forEach(k => { if (!('color' in saved[k])) saved[k].color = null; });
+          return saved;
         }
+        // Default base
         const base = {
           'Fuel': { eur:0, inr:0, budgetEur:127.45, budgetInr:13000 },
           'Toll': { eur:0, inr:0, budgetEur:112.75, budgetInr:11500 },
@@ -95,12 +90,12 @@
           'Entries and Activities': { eur:0, inr:0, budgetEur:58.82, budgetInr:6000 },
           'Shopping': { eur:0, inr:0, budgetEur:147.06, budgetInr:15000 }
         };
-        Object.keys(base).forEach(k => { if (!('color' in base[k])) base[k].color = null; });
+        Object.keys(base).forEach(k => { base[k].color = null; });
         return base;
       };
       const getInitialHistory = () => {
-        // Start with NO transactions (clean slate)
-        return [];
+        // Load from localStorage so transactions persist
+        return JSON.parse(localStorage.getItem('expenseHistory') || '[]');
       };
 
       const [expenses, setExpenses] = useState(getInitialExpenses);
@@ -121,11 +116,13 @@
 
       const [showAddCategory, setShowAddCategory] = useState(false);
 
+      // Budget edit auto-convert state
+      const [budgetEdit, setBudgetEdit] = useState({ eur: '', inr: '', last: null });
+
       // Color picker state
       const [colorPickerFor, setColorPickerFor] = useState(null);
 
-      const exchangeRate = 102; // 1 EUR = 102 INR
-
+      // Persist on changes
       useEffect(()=>{ localStorage.setItem('expenseTrackerData', JSON.stringify(expenses)); },[expenses]);
       useEffect(()=>{ localStorage.setItem('expenseHistory', JSON.stringify(expenseHistory)); },[expenseHistory]);
 
@@ -193,6 +190,7 @@
         updated[category].budgetInr = parseFloat(inr);
         setExpenses(updated);
         setEditingBudget(null);
+        setBudgetEdit({ eur:'', inr:'', last:null });
       };
       const deleteCategory = (category) => {
         const updated = { ...expenses };
@@ -403,14 +401,11 @@
 
                 {/* Categories grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {Object.keys(expenses)
-                    .filter(c => c.toLowerCase().includes(search.trim().toLowerCase()))
-                    .map(category=>{
+                  {filteredCategories.map(category=>{
                     const data = expenses[category];
                     const status = getSpendingStatus(data.eur, data.budgetEur);
                     const remainingEur = data.budgetEur - data.eur;
                     const remainingInr = data.budgetInr - data.inr;
-                    const pct = Math.min((data.eur/data.budgetEur)*100,100);
 
                     return (
                       <div key={category} className="bg-white rounded-xl shadow-lg overflow-hidden"
@@ -457,8 +452,16 @@
                                 )}
                               </div>
 
-                              <button onClick={()=>setEditingBudget(category)}
-                                      className="text-blue-600 hover:bg-blue-100 p-2 rounded-lg"><Edit3/></button>
+                              <button
+                                onClick={()=>{
+                                  setEditingBudget(category);
+                                  setBudgetEdit({
+                                    eur: String(data.budgetEur.toFixed(2)),
+                                    inr: String(data.budgetInr.toFixed(0)),
+                                    last: null
+                                  });
+                                }}
+                                className="text-blue-600 hover:bg-blue-100 p-2 rounded-lg"><Edit3/></button>
                               {Object.keys(expenses).length>1 && (
                                 <button onClick={()=>setDeleteConfirmation(category)}
                                         className="text-red-600 hover:bg-red-100 p-2 rounded-lg"><Trash2/></button>
@@ -469,19 +472,49 @@
                           {editingBudget===category ? (
                             <div className="space-y-3">
                               <div className="grid grid-cols-2 gap-2">
-                                <input type="number" step="0.01" defaultValue={data.budgetEur}
-                                       className="border border-gray-300 rounded px-3 py-2 text-sm" id={`b-eur-${category}`}/>
-                                <input type="number" step="0.01" defaultValue={data.budgetInr}
-                                       className="border border-gray-300 rounded px-3 py-2 text-sm" id={`b-inr-${category}`}/>
+                                <div>
+                                  <label className="text-xs text-gray-500">Budget EUR</label>
+                                  <input
+                                    type="number" step="0.01"
+                                    value={budgetEdit.eur}
+                                    onChange={(e)=>{
+                                      const v = e.target.value;
+                                      const num = parseFloat(v);
+                                      setBudgetEdit({
+                                        eur: v,
+                                        inr: isNaN(num) ? '' : String((num*exchangeRate).toFixed(0)),
+                                        last: 'EUR'
+                                      });
+                                    }}
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs text-gray-500">Budget INR</label>
+                                  <input
+                                    type="number" step="0.01"
+                                    value={budgetEdit.inr}
+                                    onChange={(e)=>{
+                                      const v = e.target.value;
+                                      const num = parseFloat(v);
+                                      setBudgetEdit({
+                                        eur: isNaN(num) ? '' : String((num/exchangeRate).toFixed(2)),
+                                        inr: v,
+                                        last: 'INR'
+                                      });
+                                    }}
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                                  />
+                                </div>
                               </div>
                               <div className="flex gap-2">
                                 <button onClick={()=>{
-                                          const eur=document.getElementById(`b-eur-${category}`).value;
-                                          const inr=document.getElementById(`b-inr-${category}`).value;
+                                          const eur = parseFloat(budgetEdit.eur||'0');
+                                          const inr = parseFloat(budgetEdit.inr||'0');
                                           updateBudget(category, eur, inr);
                                         }}
                                         className="bg-green-600 text-white px-4 py-1 rounded text-sm hover:bg-green-700">Save</button>
-                                <button onClick={()=>setEditingBudget(null)}
+                                <button onClick={()=>{ setEditingBudget(null); setBudgetEdit({eur:'', inr:'', last:null}); }}
                                         className="bg-gray-500 text-white px-4 py-1 rounded text-sm hover:bg-gray-600">Cancel</button>
                               </div>
                             </div>
@@ -595,7 +628,7 @@
                                 </div>
                                 <div className="flex gap-2 justify-end">
                                   <button onClick={()=>saveEditTxn(txn)} className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Save</button>
-                                  <button onClick={cancelEditTxn} className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600">Cancel</button>
+                                  <button onClick={()=>cancelEditTxn()} className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600">Cancel</button>
                                 </div>
                               </div>
                             )}
