@@ -119,7 +119,6 @@
       const [editingTxnId, setEditingTxnId] = useState(null);
       const [editForm, setEditForm] = useState({ amount:'', currency:'EUR' });
 
-      // MISSING BEFORE: add this state so the Add Category section can toggle
       const [showAddCategory, setShowAddCategory] = useState(false);
 
       // Color picker state
@@ -230,7 +229,7 @@
 
       const categoryTxns = (cat)=> expenseHistory.filter(e=>e.category===cat);
 
-      // ---- Edit Transaction ----
+      // ---- Edit / Delete Transaction ----
       const startEditTxn = (txn)=>{
         setEditingTxnId(txn.id);
         setEditForm({ amount: String(txn.amount), currency: txn.currency });
@@ -269,6 +268,18 @@
         });
         setExpenseHistory(updatedHistory);
         setEditingTxnId(null);
+      };
+
+      const deleteTransaction = (id) => {
+        const tr = expenseHistory.find(t => t.id === id);
+        if (!tr) return;
+        const updated = { ...expenses };
+        if (updated[tr.category]) {
+          updated[tr.category].eur -= tr.eurAmount;
+          updated[tr.category].inr -= tr.inrAmount;
+        }
+        setExpenses(updated);
+        setExpenseHistory(expenseHistory.filter(t => t.id !== id));
       };
 
       // ---------------- UI ----------------
@@ -558,9 +569,16 @@
                               </div>
                             </div>
                             {editingTxnId!==txn.id ? (
-                              <div className="text-right">
-                                <div className="font-semibold">{txn.currency==='EUR'?'€':'₹'}{txn.amount.toFixed(2)}</div>
-                                <button onClick={()=>startEditTxn(txn)} className="text-blue-600 hover:underline text-sm">Edit</button>
+                              <div className="text-right flex items-center gap-2">
+                                <div>
+                                  <div className="font-semibold">{txn.currency==='EUR'?'€':'₹'}{txn.amount.toFixed(2)}</div>
+                                  <div className="flex gap-3 justify-end mt-1">
+                                    <button onClick={()=>startEditTxn(txn)} className="text-blue-600 hover:underline text-sm">Edit</button>
+                                    <button onClick={()=>deleteTransaction(txn.id)} className="text-red-600 hover:bg-red-100 p-2 rounded-lg" title="Delete">
+                                      <Trash2/>
+                                    </button>
+                                  </div>
+                                </div>
                               </div>
                             ) : (
                               <div className="text-right space-y-2">
@@ -616,9 +634,14 @@
                               {entry.edited && <span className="ml-2 text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-700">edited</span>}
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="font-semibold">{entry.currency==='EUR'?'€':'₹'}{entry.amount.toFixed(2)}</div>
-                            <div className="text-sm text-gray-500">€{entry.eurAmount.toFixed(2)} | ₹{entry.inrAmount.toFixed(0)}</div>
+                          <div className="text-right flex items-center gap-2">
+                            <div>
+                              <div className="font-semibold">{entry.currency==='EUR'?'€':'₹'}{entry.amount.toFixed(2)}</div>
+                              <div className="text-sm text-gray-500">€{entry.eurAmount.toFixed(2)} | ₹{entry.inrAmount.toFixed(0)}</div>
+                            </div>
+                            <button onClick={()=>deleteTransaction(entry.id)} className="text-red-600 hover:bg-red-100 p-2 rounded-lg" title="Delete">
+                              <Trash2/>
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -628,7 +651,7 @@
               </div>
             )}
 
-            {/* Delete confirmation modal */}
+            {/* Delete confirmation modal for categories */}
             {deleteConfirmation && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-xl p-6 max-w-md mx-4">
