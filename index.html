@@ -1,991 +1,653 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="manifest" href="./manifest.json" />
-    <meta name="theme-color" content="#0f172a" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#0f172a" />
 
-    <!-- iOS polish -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <link rel="apple-touch-icon" href="./icon-192.png" />
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💰 Expense Tracker</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-                sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-    </style>
+  <!-- iOS polish -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>💰 Expense Tracker</title>
+
+  <!-- React 18 UMD -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+
+  <!-- Babel (for in-browser JSX) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js" crossorigin></script>
+
+  <!-- Tailwind (CDN mode) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      background: #eef2ff;
+    }
+    .dot { width:10px; height:10px; border-radius:9999px; display:inline-block; }
+  </style>
 </head>
 <body>
-    <div id="root"></div>
+  <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+  <script type="text/babel" data-presets="env,react">
+    const { useState, useEffect } = React;
 
-        // Lucide React icons as inline SVG components
-        const Plus = () => (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-        );
+    /* ---------- Icons ---------- */
+    const Icon = ({children, size=20}) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        {children}
+      </svg>
+    );
+    const Plus   = () => <Icon><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></Icon>;
+    const Edit3  = ({size=16}) => <Icon size={size}><path d="M12 20h9"/><path d="M16.5 3.5a2 2 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></Icon>;
+    const Trash2 = ({size=16}) => <Icon size={size}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></Icon>;
+    const Dollar = () => <Icon size={24}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></Icon>;
+    const TrendingUp = () => <Icon><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></Icon>;
+    const AlertCircle = ({size=20}) => <Icon size={size}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></Icon>;
+    const ArrowLeft = () => <Icon><polyline points="15 18 9 12 15 6"/></Icon>;
+    const Palette = () => <Icon size={18}><path d="M12 22a10 10 0 1 1 10-10c0 3-2 4-4 4h-1a2 2 0 0 0 0 4H12z"/><circle cx="7.5" cy="10.5" r="1.5"/><circle cx="12" cy="7.5" r="1.5"/><circle cx="16.5" cy="10.5" r="1.5"/></Icon>;
 
-        const Edit3 = ({ size = 20 }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 20h9"></path>
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-            </svg>
-        );
+    /* ---------- Pastel Palette ---------- */
+    const PASTEL_COLORS = [
+      '#93c5fd', // Sky 300
+      '#a7f3d0', // Emerald 200
+      '#fde68a', // Amber 300
+      '#fbcfe8', // Pink 200
+      '#c7d2fe', // Indigo 200
+      '#c4b5fd'  // Violet 300
+    ];
 
-        const Trash2 = ({ size = 20 }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                <line x1="10" y1="11" x2="10" y2="17"></line>
-                <line x1="14" y1="11" x2="14" y2="17"></line>
-            </svg>
-        );
-
-        const DollarSign = () => (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="1" x2="12" y2="23"></line>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-            </svg>
-        );
-
-        const TrendingUp = () => (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                <polyline points="17 6 23 6 23 12"></polyline>
-            </svg>
-        );
-
-        const AlertCircle = ({ size = 20 }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-        );
-
-        const Search = () => (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-        );
-
-        const ArrowLeft = () => (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="19" y1="12" x2="5" y2="12"></line>
-                <polyline points="12 19 5 12 12 5"></polyline>
-            </svg>
-        );
-
-        const Check = () => (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-        );
-
-        const X = () => (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        );
-
-        function ExpenseTracker() {
-            // Initialize expenses from saved data or default values
-            const getInitialExpenses = () => {
-                const savedExpenses = JSON.parse(localStorage.getItem('expenseTrackerData') || 'null');
-                return savedExpenses || {
-                    'Fuel': { eur: 0, inr: 0, budgetEur: 127.45, budgetInr: 13000 },
-                    'Toll': { eur: 0, inr: 0, budgetEur: 112.75, budgetInr: 11500 },
-                    'Parking': { eur: 0, inr: 0, budgetEur: 19.61, budgetInr: 2000 },
-                    'Internal Transport': { eur: 17.03, inr: 1737.53, budgetEur: 98.04, budgetInr: 10000 },
-                    'Food (incl. alcohol)': { eur: 0, inr: 0, budgetEur: 441.18, budgetInr: 45000 },
-                    'Entries and Activities': { eur: 0, inr: 0, budgetEur: 58.82, budgetInr: 6000 },
-                    'Shopping': { eur: 0, inr: 0, budgetEur: 147.06, budgetInr: 15000 }
-                };
+    function ExpenseTracker(){
+      // ---- Initial Data ----
+      const getInitialExpenses = () => {
+        const saved = JSON.parse(localStorage.getItem('expenseTrackerData') || 'null');
+        if (saved) {
+          // Preserve categories + budgets (+color if any), but reset amounts to zero.
+          const cleaned = {};
+          Object.keys(saved).forEach(k => {
+            const e = saved[k];
+            cleaned[k] = {
+              eur: 0,
+              inr: 0,
+              budgetEur: typeof e.budgetEur === 'number' ? e.budgetEur : 0,
+              budgetInr: typeof e.budgetInr === 'number' ? e.budgetInr : 0,
+              color: ('color' in e) ? e.color : null
             };
+          });
+          return cleaned;
+        }
+        const base = {
+          'Fuel': { eur:0, inr:0, budgetEur:127.45, budgetInr:13000 },
+          'Toll': { eur:0, inr:0, budgetEur:112.75, budgetInr:11500 },
+          'Parking': { eur:0, inr:0, budgetEur:19.61, budgetInr:2000 },
+          'Internal Transport': { eur:17.03, inr:1737.53, budgetEur:98.04, budgetInr:10000 },
+          'Food (incl. alcohol)': { eur:0, inr:0, budgetEur:441.18, budgetInr:45000 },
+          'Entries and Activities': { eur:0, inr:0, budgetEur:58.82, budgetInr:6000 },
+          'Shopping': { eur:0, inr:0, budgetEur:147.06, budgetInr:15000 }
+        };
+        Object.keys(base).forEach(k => { if (!('color' in base[k])) base[k].color = null; });
+        return base;
+      };
+      const getInitialHistory = () => {
+        // Start with NO transactions (clean slate)
+        return [];
+      };
 
-            // Initialize expense history from saved data
-            const getInitialHistory = () => {
-                return JSON.parse(localStorage.getItem('expenseHistory') || '[]');
-            };
+      const [expenses, setExpenses] = useState(getInitialExpenses);
+      const [expenseHistory, setExpenseHistory] = useState(getInitialHistory);
 
-            const [expenses, setExpenses] = useState(getInitialExpenses);
-            const [expenseHistory, setExpenseHistory] = useState(getInitialHistory);
-            const [activeTab, setActiveTab] = useState('tracker');
+      const [activeTab, setActiveTab] = useState('tracker'); // 'tracker' | 'history' | 'category'
+      const [selectedCategory, setSelectedCategory] = useState(null);
+      const [showAllCatTxns, setShowAllCatTxns] = useState(false);
+      const [search, setSearch] = useState('');
 
-            const [newExpense, setNewExpense] = useState({
-                category: '',
-                amount: '',
-                currency: 'EUR'
-            });
+      const [newExpense, setNewExpense] = useState({ category:'', amount:'', currency:'EUR' });
+      const [newCategory, setNewCategory] = useState({ name:'', budget:'', currency:'EUR' });
+      const [editingBudget, setEditingBudget] = useState(null);
+      const [deleteConfirmation, setDeleteConfirmation] = useState(null);
 
-            const [newCategory, setNewCategory] = useState({
-                name: '',
-                budget: '',
-                currency: 'EUR'
-            });
+      const [editingTxnId, setEditingTxnId] = useState(null);
+      const [editForm, setEditForm] = useState({ amount:'', currency:'EUR' });
 
-            const [editingBudget, setEditingBudget] = useState(null);
-            const [showAddCategory, setShowAddCategory] = useState(false);
-            const [deleteConfirmation, setDeleteConfirmation] = useState(null);
-            const [searchQuery, setSearchQuery] = useState('');
-            const [selectedCategory, setSelectedCategory] = useState(null);
-            const [showAllTransactions, setShowAllTransactions] = useState(false);
-            const [editingTransaction, setEditingTransaction] = useState(null);
-            const [editTransactionData, setEditTransactionData] = useState({});
+      // MISSING BEFORE: add this state so the Add Category section can toggle
+      const [showAddCategory, setShowAddCategory] = useState(false);
 
-            const exchangeRate = 102; // 1 EUR = 102 INR (approximate)
+      // Color picker state
+      const [colorPickerFor, setColorPickerFor] = useState(null);
 
-            // Save expenses to storage whenever expenses change
-            useEffect(() => {
-                localStorage.setItem('expenseTrackerData', JSON.stringify(expenses));
-            }, [expenses]);
+      const exchangeRate = 102; // 1 EUR = 102 INR
 
-            // Save expense history to storage whenever it changes
-            useEffect(() => {
-                localStorage.setItem('expenseHistory', JSON.stringify(expenseHistory));
-            }, [expenseHistory]);
+      useEffect(()=>{ localStorage.setItem('expenseTrackerData', JSON.stringify(expenses)); },[expenses]);
+      useEffect(()=>{ localStorage.setItem('expenseHistory', JSON.stringify(expenseHistory)); },[expenseHistory]);
 
-            const addExpense = () => {
-                if (!newExpense.category || !newExpense.amount) return;
+      // ---- Helpers ----
+      const getSpendingStatus = (spent,budget)=>{
+        const p=(spent/budget)*100;
+        if(p>=100) return { color:'bg-red-500', text:'Over Budget!', textColor:'text-red-600' };
+        if(p>=80)  return { color:'bg-yellow-500', text:'Close to Limit', textColor:'text-yellow-600' };
+        if(p>=50)  return { color:'bg-blue-500', text:'On Track', textColor:'text-blue-600' };
+        return { color:'bg-green-500', text:'Good', textColor:'text-green-600' };
+      };
+      const totalSpent = Object.values(expenses).reduce((t,e)=>({eur:t.eur+e.eur,inr:t.inr+e.inr}),{eur:0,inr:0});
+      const totalBudget= Object.values(expenses).reduce((t,e)=>({eur:t.eur+e.budgetEur,inr:t.inr+e.budgetInr}),{eur:0,inr:0});
 
-                const amount = parseFloat(newExpense.amount);
-                const updatedExpenses = { ...expenses };
+      // ---- Add Expense ----
+      const addExpense = ()=>{
+        if(!newExpense.category || !newExpense.amount) return;
+        const amt = parseFloat(newExpense.amount);
+        const updated = { ...expenses };
 
-                let eurAmount, inrAmount;
-                if (newExpense.currency === 'EUR') {
-                    eurAmount = amount;
-                    inrAmount = amount * exchangeRate;
-                    updatedExpenses[newExpense.category].eur += amount;
-                    updatedExpenses[newExpense.category].inr += amount * exchangeRate;
-                } else {
-                    eurAmount = amount / exchangeRate;
-                    inrAmount = amount;
-                    updatedExpenses[newExpense.category].inr += amount;
-                    updatedExpenses[newExpense.category].eur += amount / exchangeRate;
-                }
-
-                // Add to expense history
-                const historyEntry = {
-                    id: Date.now(),
-                    category: newExpense.category,
-                    amount: amount,
-                    currency: newExpense.currency,
-                    eurAmount: eurAmount,
-                    inrAmount: inrAmount,
-                    date: new Date().toISOString(),
-                    timestamp: new Date().toLocaleString()
-                };
-
-                setExpenseHistory(prev => [historyEntry, ...prev]);
-                setExpenses(updatedExpenses);
-                setNewExpense({ category: '', amount: '', currency: 'EUR' });
-            };
-
-            const addCategory = () => {
-                if (!newCategory.name || !newCategory.budget) return;
-
-                const budget = parseFloat(newCategory.budget);
-                const updatedExpenses = { ...expenses };
-                
-                // Convert budget based on selected currency
-                let budgetEur, budgetInr;
-                if (newCategory.currency === 'EUR') {
-                    budgetEur = budget;
-                    budgetInr = budget * exchangeRate;
-                } else {
-                    budgetEur = budget / exchangeRate;
-                    budgetInr = budget;
-                }
-
-                updatedExpenses[newCategory.name] = {
-                    eur: 0,
-                    inr: 0,
-                    budgetEur: budgetEur,
-                    budgetInr: budgetInr
-                };
-
-                setExpenses(updatedExpenses);
-                setNewCategory({ name: '', budget: '', currency: 'EUR' });
-                setShowAddCategory(false);
-            };
-
-            const updateBudget = (category, budgetEur, budgetInr) => {
-                const updatedExpenses = { ...expenses };
-                updatedExpenses[category].budgetEur = parseFloat(budgetEur);
-                updatedExpenses[category].budgetInr = parseFloat(budgetInr);
-                setExpenses(updatedExpenses);
-                setEditingBudget(null);
-            };
-
-            const deleteCategory = (category) => {
-                const updatedExpenses = { ...expenses };
-                delete updatedExpenses[category];
-                
-                // Also remove related expense history
-                const updatedHistory = expenseHistory.filter(entry => entry.category !== category);
-                
-                setExpenses(updatedExpenses);
-                setExpenseHistory(updatedHistory);
-                setDeleteConfirmation(null);
-            };
-
-            const editTransaction = (transactionId) => {
-                const transaction = expenseHistory.find(t => t.id === transactionId);
-                if (!transaction) return;
-
-                setEditingTransaction(transactionId);
-                setEditTransactionData({
-                    amount: transaction.amount,
-                    currency: transaction.currency
-                });
-            };
-
-            const saveTransactionEdit = (transactionId) => {
-                const transaction = expenseHistory.find(t => t.id === transactionId);
-                if (!transaction) return;
-
-                const newAmount = parseFloat(editTransactionData.amount);
-                if (isNaN(newAmount) || newAmount <= 0) return;
-
-                // Calculate difference to update category totals
-                const oldEurAmount = transaction.eurAmount;
-                const oldInrAmount = transaction.inrAmount;
-
-                let newEurAmount, newInrAmount;
-                if (editTransactionData.currency === 'EUR') {
-                    newEurAmount = newAmount;
-                    newInrAmount = newAmount * exchangeRate;
-                } else {
-                    newEurAmount = newAmount / exchangeRate;
-                    newInrAmount = newAmount;
-                }
-
-                // Update expenses
-                const updatedExpenses = { ...expenses };
-                updatedExpenses[transaction.category].eur = updatedExpenses[transaction.category].eur - oldEurAmount + newEurAmount;
-                updatedExpenses[transaction.category].inr = updatedExpenses[transaction.category].inr - oldInrAmount + newInrAmount;
-
-                // Update transaction history
-                const updatedHistory = expenseHistory.map(t => {
-                    if (t.id === transactionId) {
-                        return {
-                            ...t,
-                            amount: newAmount,
-                            currency: editTransactionData.currency,
-                            eurAmount: newEurAmount,
-                            inrAmount: newInrAmount,
-                            edited: true,
-                            editedAt: new Date().toLocaleString()
-                        };
-                    }
-                    return t;
-                });
-
-                setExpenses(updatedExpenses);
-                setExpenseHistory(updatedHistory);
-                setEditingTransaction(null);
-                setEditTransactionData({});
-            };
-
-            const cancelTransactionEdit = () => {
-                setEditingTransaction(null);
-                setEditTransactionData({});
-            };
-
-            const deleteTransaction = (transactionId) => {
-                const transaction = expenseHistory.find(t => t.id === transactionId);
-                if (!transaction) return;
-
-                // Update category totals by subtracting the transaction amounts
-                const updatedExpenses = { ...expenses };
-                if (updatedExpenses[transaction.category]) {
-                    updatedExpenses[transaction.category].eur -= transaction.eurAmount;
-                    updatedExpenses[transaction.category].inr -= transaction.inrAmount;
-                }
-
-                // Remove transaction from history
-                const updatedHistory = expenseHistory.filter(t => t.id !== transactionId);
-
-                setExpenses(updatedExpenses);
-                setExpenseHistory(updatedHistory);
-            };
-
-            const viewCategoryDetails = (category) => {
-                setSelectedCategory(category);
-                setShowAllTransactions(false);
-            };
-
-            const backToMain = () => {
-                setSelectedCategory(null);
-                setShowAllTransactions(false);
-                setSearchQuery('');
-            };
-
-            const getCategoryTransactions = (category) => {
-                return expenseHistory.filter(entry => entry.category === category);
-            };
-
-            const filteredCategories = Object.keys(expenses).filter(category =>
-                category.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-
-            const getSpendingStatus = (spent, budget) => {
-                const percentage = (spent / budget) * 100;
-                if (percentage >= 100) return { color: 'bg-red-500', text: 'Over Budget!', textColor: 'text-red-600' };
-                if (percentage >= 80) return { color: 'bg-yellow-500', text: 'Close to Limit', textColor: 'text-yellow-600' };
-                if (percentage >= 50) return { color: 'bg-blue-500', text: 'On Track', textColor: 'text-blue-600' };
-                return { color: 'bg-green-500', text: 'Good', textColor: 'text-green-600' };
-            };
-
-            const getTotalSpent = () => {
-                return Object.values(expenses).reduce(
-                    (total, expense) => ({
-                        eur: total.eur + expense.eur,
-                        inr: total.inr + expense.inr
-                    }),
-                    { eur: 0, inr: 0 }
-                );
-            };
-
-            const getTotalBudget = () => {
-                return Object.values(expenses).reduce(
-                    (total, expense) => ({
-                        eur: total.eur + expense.budgetEur,
-                        inr: total.inr + expense.budgetInr
-                    }),
-                    { eur: 0, inr: 0 }
-                );
-            };
-
-            const totalSpent = getTotalSpent();
-            const totalBudget = getTotalBudget();
-
-            return (
-                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-                    <div className="max-w-6xl mx-auto">
-                        {/* Category Detail View */}
-                        {selectedCategory ? (
-                            <>
-                                {/* Back Button and Category Header */}
-                                <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-                                    <button
-                                        onClick={backToMain}
-                                        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4 font-medium"
-                                    >
-                                        <ArrowLeft />
-                                        Back to Overview
-                                    </button>
-                                    
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <h1 className="text-3xl font-bold text-gray-800">{selectedCategory}</h1>
-                                            <p className="text-gray-600 mt-2">Category Details and Transaction History</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-sm text-gray-500">Total Spent</div>
-                                            <div className="text-2xl font-bold text-gray-800">
-                                                €{expenses[selectedCategory].eur.toFixed(2)}
-                                            </div>
-                                            <div className="text-sm text-gray-600">
-                                                ₹{expenses[selectedCategory].inr.toFixed(0)}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Category Progress */}
-                                    <div className="mt-6">
-                                        <div className="grid grid-cols-3 gap-4 mb-4">
-                                            <div className="bg-gray-50 rounded-lg p-4">
-                                                <div className="text-sm text-gray-500 mb-1">Budget</div>
-                                                <div className="font-semibold text-gray-800">
-                                                    €{expenses[selectedCategory].budgetEur.toFixed(2)}
-                                                </div>
-                                                <div className="text-sm text-gray-600">
-                                                    ₹{expenses[selectedCategory].budgetInr.toFixed(0)}
-                                                </div>
-                                            </div>
-                                            <div className="bg-gray-50 rounded-lg p-4">
-                                                <div className="text-sm text-gray-500 mb-1">Spent</div>
-                                                <div className="font-semibold text-gray-800">
-                                                    €{expenses[selectedCategory].eur.toFixed(2)}
-                                                </div>
-                                                <div className="text-sm text-gray-600">
-                                                    ₹{expenses[selectedCategory].inr.toFixed(0)}
-                                                </div>
-                                            </div>
-                                            <div className="bg-gray-50 rounded-lg p-4">
-                                                <div className="text-sm text-gray-500 mb-1">Remaining</div>
-                                                <div className="font-semibold text-gray-800">
-                                                    €{(expenses[selectedCategory].budgetEur - expenses[selectedCategory].eur).toFixed(2)}
-                                                </div>
-                                                <div className="text-sm text-gray-600">
-                                                    ₹{(expenses[selectedCategory].budgetInr - expenses[selectedCategory].inr).toFixed(0)}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex justify-between text-sm mb-2">
-                                            <span>Progress</span>
-                                            <span className={getSpendingStatus(expenses[selectedCategory].eur, expenses[selectedCategory].budgetEur).textColor}>
-                                                {getSpendingStatus(expenses[selectedCategory].eur, expenses[selectedCategory].budgetEur).text}
-                                                {' '}({Math.min((expenses[selectedCategory].eur / expenses[selectedCategory].budgetEur) * 100, 100).toFixed(1)}%)</span>
-                                        </div>
-                                        <div className="w-full bg-gray-200 rounded-full h-3">
-                                            <div
-                                                className={`h-3 rounded-full transition-all duration-500 ${getSpendingStatus(expenses[selectedCategory].eur, expenses[selectedCategory].budgetEur).color}`}
-                                                style={{ width: `${Math.min((expenses[selectedCategory].eur / expenses[selectedCategory].budgetEur) * 100, 100)}%` }}
-                                            ></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Transaction History for Category */}
-                                <div className="bg-white rounded-xl shadow-lg p-6">
-                                    <div className="flex items-center justify-between mb-6">
-                                        <h2 className="text-xl font-semibold">Transaction History</h2>
-                                        <div className="text-sm text-gray-500">
-                                            {getCategoryTransactions(selectedCategory).length} total transactions
-                                        </div>
-                                    </div>
-
-                                    {getCategoryTransactions(selectedCategory).length === 0 ? (
-                                        <div className="text-center py-12">
-                                            <div className="text-gray-400 text-lg mb-2">No transactions yet</div>
-                                            <div className="text-gray-500">Add expenses to this category to see them here</div>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <div className="space-y-4">
-                                                {getCategoryTransactions(selectedCategory)
-                                                    .slice(0, showAllTransactions ? undefined : 5)
-                                                    .map((entry) => (
-                                                        <div key={entry.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                                                            {editingTransaction === entry.id ? (
-                                                                <div className="space-y-3">
-                                                                    <div className="grid grid-cols-2 gap-3">
-                                                                        <input
-                                                                            type="number"
-                                                                            step="0.01"
-                                                                            value={editTransactionData.amount}
-                                                                            onChange={(e) => setEditTransactionData({ ...editTransactionData, amount: e.target.value })}
-                                                                            className="border border-gray-300 rounded px-3 py-2"
-                                                                            placeholder="Amount"
-                                                                        />
-                                                                        <select
-                                                                            value={editTransactionData.currency}
-                                                                            onChange={(e) => setEditTransactionData({ ...editTransactionData, currency: e.target.value })}
-                                                                            className="border border-gray-300 rounded px-3 py-2"
-                                                                        >
-                                                                            <option value="EUR">EUR (€)</option>
-                                                                            <option value="INR">INR (₹)</option>
-                                                                        </select>
-                                                                    </div>
-                                                                    <div className="flex gap-2">
-                                                                        <button
-                                                                            onClick={() => saveTransactionEdit(entry.id)}
-                                                                            className="flex items-center gap-1 bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors"
-                                                                        >
-                                                                            <Check /> Save
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={cancelTransactionEdit}
-                                                                            className="flex items-center gap-1 bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600 transition-colors"
-                                                                        >
-                                                                            <X /> Cancel
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="flex justify-between items-start">
-                                                                    <div className="flex-1">
-                                                                        <div className="text-sm text-gray-600">{entry.timestamp}</div>
-                                                                        {entry.edited && (
-                                                                            <div className="inline-block mt-1 px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded">
-                                                                                Edited {entry.editedAt && `on ${entry.editedAt}`}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="text-right flex items-center gap-3">
-                                                                        <div>
-                                                                            <div className="font-semibold text-gray-800">
-                                                                                {entry.currency === 'EUR' ? '€' : '₹'}{entry.amount.toFixed(2)}
-                                                                            </div>
-                                                                            <div className="text-sm text-gray-500">
-                                                                                €{entry.eurAmount.toFixed(2)} | ₹{entry.inrAmount.toFixed(0)}
-                                                                            </div>
-                                                                        </div>
-                                                                        <button
-                                                                            onClick={() => editTransaction(entry.id)}
-                                                                            className="text-blue-600 hover:bg-blue-100 p-2 rounded-lg transition-colors"
-                                                                        >
-                                                                            <Edit3 size={16} />
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => deleteTransaction(entry.id)}
-                                                                            className="text-red-600 hover:bg-red-100 p-2 rounded-lg transition-colors"
-                                                                        >
-                                                                            <Trash2 size={16} />
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                            </div>
-
-                                            {getCategoryTransactions(selectedCategory).length > 5 && !showAllTransactions && (
-                                                <button
-                                                    onClick={() => setShowAllTransactions(true)}
-                                                    className="w-full mt-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
-                                                >
-                                                    Show All {getCategoryTransactions(selectedCategory).length} Transactions
-                                                </button>
-                                            )}
-
-                                            {showAllTransactions && getCategoryTransactions(selectedCategory).length > 5 && (
-                                                <button
-                                                    onClick={() => setShowAllTransactions(false)}
-                                                    className="w-full mt-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
-                                                >
-                                                    Show Less
-                                                </button>
-                                            )}
-                                        </>
-                                    )}
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                        {/* Header with Tabs */}
-                        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <div>
-                                    <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
-                                        <DollarSign />
-                                        Expense Tracker
-                                    </h1>
-                                    <p className="text-gray-600 mt-2">Manage your expenses across categories</p>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-sm text-gray-500">Total Spent</div>
-                                    <div className="text-2xl font-bold text-gray-800">
-                                        €{totalSpent.eur.toFixed(2)} | ₹{totalSpent.inr.toFixed(0)}
-                                    </div>
-                                    <div className="text-sm text-gray-500">
-                                        Budget: €{totalBudget.eur.toFixed(2)} | ₹{totalBudget.inr.toFixed(0)}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Tab Navigation */}
-                            <div className="flex border-b">
-                                <button
-                                    onClick={() => setActiveTab('tracker')}
-                                    className={`px-6 py-3 font-medium transition-colors ${
-                                        activeTab === 'tracker'
-                                            ? 'text-blue-600 border-b-2 border-blue-600'
-                                            : 'text-gray-500 hover:text-gray-700'
-                                    }`}
-                                >
-                                    Expense Tracker
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('history')}
-                                    className={`px-6 py-3 font-medium transition-colors ${
-                                        activeTab === 'history'
-                                            ? 'text-blue-600 border-b-2 border-blue-600'
-                                            : 'text-gray-500 hover:text-gray-700'
-                                    }`}
-                                >
-                                    Expense History ({expenseHistory.length})
-                                </button>
-                            </div>
-
-                            {/* Overall Progress Bar - Only show in tracker tab */}
-                            {activeTab === 'tracker' && (
-                                <div className="mt-4">
-                                    <div className="flex justify-between text-sm mb-2">
-                                        <span>Overall Progress</span>
-                                        <span className={getSpendingStatus(totalSpent.eur, totalBudget.eur).textColor}>
-                                            {getSpendingStatus(totalSpent.eur, totalBudget.eur).text}
-                                        </span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-3">
-                                        <div
-                                            className={`h-3 rounded-full transition-all duration-500 ${getSpendingStatus(totalSpent.eur, totalBudget.eur).color}`}
-                                            style={{ width: `${Math.min((totalSpent.eur / totalBudget.eur) * 100, 100)}%` }}
-                                        ></div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Tracker Tab Content */}
-                        {activeTab === 'tracker' && (
-                            <>
-                                {/* Search Categories */}
-                                <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-                                    <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                                        <Search />
-                                        Search Categories
-                                    </h2>
-                                    <input
-                                        type="text"
-                                        placeholder="Search for a category..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    />
-                                    {searchQuery && (
-                                        <div className="mt-4">
-                                            <div className="text-sm text-gray-500 mb-2">
-                                                Found {filteredCategories.length} categor{filteredCategories.length === 1 ? 'y' : 'ies'}
-                                            </div>
-                                            {filteredCategories.length > 0 && (
-                                                <div className="space-y-2">
-                                                    {filteredCategories.map(category => (
-                                                        <button
-                                                            key={category}
-                                                            onClick={() => viewCategoryDetails(category)}
-                                                            className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors flex justify-between items-center"
-                                                        >
-                                                            <span className="font-medium">{category}</span>
-                                                            <span className="text-sm text-gray-600">
-                                                                €{expenses[category].eur.toFixed(2)} / €{expenses[category].budgetEur.toFixed(2)}
-                                                            </span>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Add Expense Form */}
-                                <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-                                    <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                                        <Plus />
-                                        Add New Expense
-                                    </h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                        <select
-                                            value={newExpense.category}
-                                            onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}
-                                            className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        >
-                                            <option value="">Select Category</option>
-                                            {Object.keys(expenses).map(category => (
-                                                <option key={category} value={category}>{category}</option>
-                                            ))}
-                                        </select>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            placeholder="Amount"
-                                            value={newExpense.amount}
-                                            onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
-                                            className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                        <select
-                                            value={newExpense.currency}
-                                            onChange={(e) => setNewExpense({ ...newExpense, currency: e.target.value })}
-                                            className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        >
-                                            <option value="EUR">EUR (€)</option>
-                                            <option value="INR">INR (₹)</option>
-                                        </select>
-                                        <button
-                                            onClick={addExpense}
-                                            className="bg-blue-600 text-white rounded-lg px-6 py-2 hover:bg-blue-700 transition-colors font-medium"
-                                        >
-                                            Add Expense
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Add Category Section */}
-                                <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h2 className="text-xl font-semibold flex items-center gap-2">
-                                            <Plus />
-                                            Manage Categories
-                                        </h2>
-                                        <button
-                                            onClick={() => setShowAddCategory(!showAddCategory)}
-                                            className="bg-purple-600 text-white rounded-lg px-4 py-2 hover:bg-purple-700 transition-colors"
-                                        >
-                                            {showAddCategory ? 'Cancel' : 'Add Category'}
-                                        </button>
-                                    </div>
-
-                                    {showAddCategory && (
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                            <input
-                                                type="text"
-                                                placeholder="Category Name"
-                                                value={newCategory.name}
-                                                onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                                                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                            />
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                placeholder="Budget Amount"
-                                                value={newCategory.budget}
-                                                onChange={(e) => setNewCategory({ ...newCategory, budget: e.target.value })}
-                                                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                            />
-                                            <select
-                                                value={newCategory.currency}
-                                                onChange={(e) => setNewCategory({ ...newCategory, currency: e.target.value })}
-                                                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                            >
-                                                <option value="EUR">EUR (€)</option>
-                                                <option value="INR">INR (₹)</option>
-                                            </select>
-                                            <button
-                                                onClick={addCategory}
-                                                className="bg-purple-600 text-white rounded-lg px-6 py-2 hover:bg-purple-700 transition-colors"
-                                            >
-                                                Create Category
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Expense Categories Grid */}
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    {(searchQuery ? filteredCategories : Object.keys(expenses)).map(category => {
-                                        const data = expenses[category];
-                                        const status = getSpendingStatus(data.eur, data.budgetEur);
-                                        const remainingEur = data.budgetEur - data.eur;
-                                        const remainingInr = data.budgetInr - data.inr;
-                                        const progressPercentage = Math.min((data.eur / data.budgetEur) * 100, 100);
-
-                                        return (
-                                            <div key={category} className="bg-white rounded-xl shadow-lg overflow-hidden">
-                                                <div className="p-6">
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <button
-                                                            onClick={() => viewCategoryDetails(category)}
-                                                            className="text-lg font-semibold text-gray-800 hover:text-blue-600 transition-colors"
-                                                        >
-                                                            {category}
-                                                        </button>
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                onClick={() => setEditingBudget(category)}
-                                                                className="text-blue-600 hover:bg-blue-100 p-2 rounded-lg transition-colors"
-                                                            >
-                                                                <Edit3 size={16} />
-                                                            </button>
-                                                            {Object.keys(expenses).length > 1 && (
-                                                                <button
-                                                                    onClick={() => setDeleteConfirmation(category)}
-                                                                    className="text-red-600 hover:bg-red-100 p-2 rounded-lg transition-colors"
-                                                                >
-                                                                    <Trash2 size={16} />
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    {editingBudget === category ? (
-                                                        <div className="space-y-3">
-                                                            <div className="grid grid-cols-2 gap-2">
-                                                                <input
-                                                                    type="number"
-                                                                    step="0.01"
-                                                                    defaultValue={data.budgetEur}
-                                                                    placeholder="Budget EUR"
-                                                                    className="border border-gray-300 rounded px-3 py-2 text-sm"
-                                                                    id={`budget-eur-${category}`}
-                                                                />
-                                                                <input
-                                                                    type="number"
-                                                                    step="0.01"
-                                                                    defaultValue={data.budgetInr}
-                                                                    placeholder="Budget INR"
-                                                                    className="border border-gray-300 rounded px-3 py-2 text-sm"
-                                                                    id={`budget-inr-${category}`}
-                                                                />
-                                                            </div>
-                                                            <div className="flex gap-2">
-                                                                <button
-                                                                    onClick={() => {
-                                                                        const eurInput = document.getElementById(`budget-eur-${category}`);
-                                                                        const inrInput = document.getElementById(`budget-inr-${category}`);
-                                                                        updateBudget(category, eurInput.value, inrInput.value);
-                                                                    }}
-                                                                    className="bg-green-600 text-white px-4 py-1 rounded text-sm hover:bg-green-700 transition-colors"
-                                                                >
-                                                                    Save
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => setEditingBudget(null)}
-                                                                    className="bg-gray-500 text-white px-4 py-1 rounded text-sm hover:bg-gray-600 transition-colors"
-                                                                >
-                                                                    Cancel
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <>
-                                                            <div className="grid grid-cols-2 gap-4 mb-4">
-                                                                <div>
-                                                                    <div className="text-sm text-gray-500">Spent</div>
-                                                                    <div className="font-semibold text-gray-800">
-                                                                        €{data.eur.toFixed(2)}
-                                                                    </div>
-                                                                    <div className="text-sm text-gray-600">
-                                                                        ₹{data.inr.toFixed(0)}
-                                                                    </div>
-                                                                </div>
-                                                                <div>
-                                                                    <div className="text-sm text-gray-500">Remaining</div>
-                                                                    <div className="font-semibold text-gray-800">
-                                                                        €{remainingEur.toFixed(2)}
-                                                                    </div>
-                                                                    <div className="text-sm text-gray-600">
-                                                                        ₹{remainingInr.toFixed(0)}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="mb-4">
-                                                                <div className="flex justify-between items-center mb-2">
-                                                                    <span className="text-sm text-gray-600">Budget Progress</span>
-                                                                    <span className={`text-sm font-medium ${status.textColor}`}>
-                                                                        {status.text} ({progressPercentage.toFixed(1)}%)
-                                                                    </span>
-                                                                </div>
-                                                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                                                    <div
-                                                                        className={`h-2 rounded-full transition-all duration-500 ${status.color}`}
-                                                                        style={{ width: `${progressPercentage}%` }}
-                                                                    ></div>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
-                                                                <div>Budget: €{data.budgetEur.toFixed(2)} | ₹{data.budgetInr.toFixed(0)}</div>
-                                                            </div>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </>
-                        )}
-
-                        {/* History Tab Content */}
-                        {activeTab === 'history' && (
-                            <div className="bg-white rounded-xl shadow-lg p-6">
-                                <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                                    <TrendingUp />
-                                    Expense History
-                                </h2>
-                                
-                                {expenseHistory.length === 0 ? (
-                                    <div className="text-center py-12">
-                                        <div className="text-gray-400 text-lg mb-2">No expenses recorded yet</div>
-                                        <div className="text-gray-500">Start adding expenses to see them here</div>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4 max-h-96 overflow-y-auto">
-                                        {expenseHistory.map((entry) => (
-                                            <div key={entry.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                                                <div className="flex justify-between items-start">
-                                                    <div className="flex-1">
-                                                        <div className="font-medium text-gray-800">{entry.category}</div>
-                                                        <div className="text-sm text-gray-600 mt-1">{entry.timestamp}</div>
-                                                        {entry.edited && (
-                                                            <div className="inline-block mt-1 px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded">
-                                                                Edited
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="text-right flex items-center gap-2">
-                                                        <div>
-                                                            <div className="font-semibold text-gray-800">
-                                                                {entry.currency === 'EUR' ? '€' : '₹'}{entry.amount.toFixed(2)}
-                                                            </div>
-                                                            <div className="text-sm text-gray-500">
-                                                                €{entry.eurAmount.toFixed(2)} | ₹{entry.inrAmount.toFixed(0)}
-                                                            </div>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => deleteTransaction(entry.id)}
-                                                            className="text-red-600 hover:bg-red-100 p-2 rounded-lg transition-colors"
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                            </>
-                        )}
-
-                        {/* Delete Confirmation Modal */}
-                        {deleteConfirmation && (
-                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                                <div className="bg-white rounded-xl p-6 max-w-md mx-4">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <AlertCircle size={24} />
-                                        <h3 className="text-lg font-semibold">Confirm Delete</h3>
-                                    </div>
-                                    <p className="text-gray-600 mb-6">
-                                        Are you sure you want to delete the "{deleteConfirmation}" category? 
-                                        This will also remove all expense history for this category and cannot be undone.
-                                    </p>
-                                    <div className="flex gap-3 justify-end">
-                                        <button
-                                            onClick={() => setDeleteConfirmation(null)}
-                                            className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            onClick={() => deleteCategory(deleteConfirmation)}
-                                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                                        >
-                                            Delete
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
+        let eurAmount, inrAmount;
+        if(newExpense.currency==='EUR'){
+          eurAmount = amt; inrAmount = amt*exchangeRate;
+          updated[newExpense.category].eur += eurAmount;
+          updated[newExpense.category].inr += inrAmount;
+        }else{
+          eurAmount = amt/exchangeRate; inrAmount = amt;
+          updated[newExpense.category].inr += inrAmount;
+          updated[newExpense.category].eur += eurAmount;
         }
 
-        ReactDOM.render(<ExpenseTracker />, document.getElementById('root'));
-    </script>
+        const entry = {
+          id: Date.now(),
+          category: newExpense.category,
+          amount: amt,
+          currency: newExpense.currency,
+          eurAmount, inrAmount,
+          date: new Date().toISOString(),
+          timestamp: new Date().toLocaleString(),
+          edited:false
+        };
+
+        setExpenseHistory(prev=>[entry,...prev]);
+        setExpenses(updated);
+        setNewExpense({ category:'', amount:'', currency:'EUR' });
+      };
+
+      // ---- Category CRUD ----
+      const addCategory = ()=>{
+        if(!newCategory.name || !newCategory.budget) return;
+        const budget = parseFloat(newCategory.budget);
+        const updated = { ...expenses };
+
+        let budgetEur, budgetInr;
+        if(newCategory.currency==='EUR'){ budgetEur=budget; budgetInr=budget*exchangeRate; }
+        else { budgetEur=budget/exchangeRate; budgetInr=budget; }
+        updated[newCategory.name] = { eur:0, inr:0, budgetEur, budgetInr, color:null };
+        setExpenses(updated);
+        setNewCategory({ name:'', budget:'', currency:'EUR' });
+        setShowAddCategory(false);
+      };
+      const updateBudget = (category, eur, inr)=>{
+        const updated = { ...expenses };
+        updated[category].budgetEur = parseFloat(eur);
+        updated[category].budgetInr = parseFloat(inr);
+        setExpenses(updated);
+        setEditingBudget(null);
+      };
+      const deleteCategory = (category) => {
+        const updated = { ...expenses };
+        delete updated[category];
+        const updatedHistory = expenseHistory.filter(e=>e.category!==category);
+        setExpenses(updated);
+        setExpenseHistory(updatedHistory);
+        setDeleteConfirmation(null);
+        if(selectedCategory===category){ setSelectedCategory(null); setActiveTab('tracker'); }
+      };
+
+      // ---- Colors ----
+      const setCategoryColor = (category, color) => {
+        const updated = { ...expenses };
+        if (!updated[category]) return;
+        updated[category].color = color || null;
+        setExpenses(updated);
+      };
+
+      // ---- Category navigation ----
+      const openCategory = (name)=>{
+        setSelectedCategory(name);
+        setShowAllCatTxns(false);
+        setActiveTab('category');
+      };
+      const backToMain = ()=>{
+        setActiveTab('tracker');
+        setSelectedCategory(null);
+        setShowAllCatTxns(false);
+      };
+
+      const filteredCategories = Object.keys(expenses)
+        .filter(c => c.toLowerCase().includes(search.trim().toLowerCase()));
+
+      const categoryTxns = (cat)=> expenseHistory.filter(e=>e.category===cat);
+
+      // ---- Edit Transaction ----
+      const startEditTxn = (txn)=>{
+        setEditingTxnId(txn.id);
+        setEditForm({ amount: String(txn.amount), currency: txn.currency });
+      };
+      const cancelEditTxn = ()=> setEditingTxnId(null);
+      const saveEditTxn = (txn)=>{
+        const amt = parseFloat(editForm.amount);
+        if(!amt || isNaN(amt)) return;
+
+        const oldEur = txn.eurAmount;
+        const oldInr = txn.inrAmount;
+
+        let newEur, newInr;
+        if(editForm.currency==='EUR'){ newEur=amt; newInr=amt*exchangeRate; }
+        else { newEur=amt/exchangeRate; newInr=amt; }
+
+        // update category totals
+        const updated = { ...expenses };
+        const cat = txn.category;
+        updated[cat].eur += (newEur - oldEur);
+        updated[cat].inr += (newInr - oldInr);
+        setExpenses(updated);
+
+        // update history entry
+        const updatedHistory = expenseHistory.map(e=>{
+          if(e.id!==txn.id) return e;
+          return {
+            ...e,
+            amount: amt,
+            currency: editForm.currency,
+            eurAmount: newEur,
+            inrAmount: newInr,
+            edited: true,
+            editedAt: new Date().toLocaleString()
+          };
+        });
+        setExpenseHistory(updatedHistory);
+        setEditingTxnId(null);
+      };
+
+      // ---------------- UI ----------------
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+          <div className="max-w-6xl mx-auto">
+            {/* Header */}
+            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
+                    <Dollar/> Expense Tracker
+                  </h1>
+                  <p className="text-gray-600 mt-2">Manage your expenses across categories</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-gray-500">Total Spent</div>
+                  <div className="text-2xl font-bold text-gray-800">€{totalSpent.eur.toFixed(2)} | ₹{totalSpent.inr.toFixed(0)}</div>
+                  <div className="text-sm text-gray-500">Budget: €{totalBudget.eur.toFixed(2)} | ₹{totalBudget.inr.toFixed(0)}</div>
+                </div>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex border-b">
+                <button onClick={()=>{setActiveTab('tracker');setSelectedCategory(null);}}
+                        className={`px-6 py-3 font-medium ${activeTab==='tracker'?'text-blue-600 border-b-2 border-blue-600':'text-gray-500 hover:text-gray-700'}`}>
+                  Expense Tracker
+                </button>
+                <button onClick={()=>{setActiveTab('history');setSelectedCategory(null);}}
+                        className={`px-6 py-3 font-medium ${activeTab==='history'?'text-blue-600 border-b-2 border-blue-600':'text-gray-500 hover:text-gray-700'}`}>
+                  Expense History ({expenseHistory.length})
+                </button>
+                {activeTab==='category' && selectedCategory && (
+                  <button disabled className="px-6 py-3 font-medium text-purple-600 border-b-2 border-purple-600">
+                    {selectedCategory}
+                  </button>
+                )}
+              </div>
+
+              {/* Overall progress (only on tracker) */}
+              {activeTab==='tracker' && (
+                <div className="mt-4">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span>Overall Progress</span>
+                    <span className={getSpendingStatus(totalSpent.eur,totalBudget.eur).textColor}>
+                      {getSpendingStatus(totalSpent.eur,totalBudget.eur).text}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div className={`${getSpendingStatus(totalSpent.eur,totalBudget.eur).color} h-3 rounded-full transition-all`}
+                         style={{width:`${Math.min((totalSpent.eur/totalBudget.eur)*100,100)}%`}}/>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ------- TRACKER TAB ------- */}
+            {activeTab==='tracker' && (
+              <>
+                {/* Search + Add Expense */}
+                <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+                    <div className="lg:col-span-2 flex gap-2">
+                      <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search category…"
+                             className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"/>
+                      <button onClick={()=>{
+                                const exact = Object.keys(expenses).find(c=>c.toLowerCase()===search.trim().toLowerCase());
+                                if(exact) openCategory(exact);
+                              }}
+                              className="bg-gray-800 text-white rounded-lg px-4 py-2 hover:bg-black">Open</button>
+                    </div>
+
+                    <select value={newExpense.category}
+                            onChange={(e)=>setNewExpense({...newExpense, category:e.target.value})}
+                            className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                      <option value="">Select Category</option>
+                      {Object.keys(expenses).map(c=><option key={c} value={c}>{c}</option>)}
+                    </select>
+                    <input type="number" step="0.01" placeholder="Amount" value={newExpense.amount}
+                           onChange={e=>setNewExpense({...newExpense, amount:e.target.value})}
+                           className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"/>
+                    <div className="flex gap-2">
+                      <select value={newExpense.currency}
+                              onChange={e=>setNewExpense({...newExpense, currency:e.target.value})}
+                              className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="EUR">EUR (€)</option>
+                        <option value="INR">INR (₹)</option>
+                      </select>
+                      <button onClick={addExpense} className="bg-blue-600 text-white rounded-lg px-6 py-2 hover:bg-blue-700">
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Manage Categories */}
+                <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold flex items-center gap-2"><Plus/> Manage Categories</h2>
+                    <button onClick={()=>setShowAddCategory(s=>!s)} className="bg-purple-600 text-white rounded-lg px-4 py-2 hover:bg-purple-700">
+                      {showAddCategory?'Cancel':'Add Category'}
+                    </button>
+                  </div>
+                  {showAddCategory && (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <input type="text" placeholder="Category Name" value={newCategory.name}
+                             onChange={e=>setNewCategory({...newCategory, name:e.target.value})}
+                             className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500"/>
+                      <input type="number" step="0.01" placeholder="Budget" value={newCategory.budget}
+                             onChange={e=>setNewCategory({...newCategory, budget:e.target.value})}
+                             className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500"/>
+                      <select value={newCategory.currency}
+                              onChange={e=>setNewCategory({...newCategory, currency:e.target.value})}
+                              className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500">
+                        <option value="EUR">EUR (€)</option><option value="INR">INR (₹)</option>
+                      </select>
+                      <button onClick={addCategory} className="bg-purple-600 text-white rounded-lg px-6 py-2 hover:bg-purple-700">Create</button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Categories grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {Object.keys(expenses)
+                    .filter(c => c.toLowerCase().includes(search.trim().toLowerCase()))
+                    .map(category=>{
+                    const data = expenses[category];
+                    const status = getSpendingStatus(data.eur, data.budgetEur);
+                    const remainingEur = data.budgetEur - data.eur;
+                    const remainingInr = data.budgetInr - data.inr;
+                    const pct = Math.min((data.eur/data.budgetEur)*100,100);
+
+                    return (
+                      <div key={category} className="bg-white rounded-xl shadow-lg overflow-hidden"
+                           style={{ borderLeft: `6px solid ${data.color || '#e5e7eb'}` }}>
+                        <div className="p-6">
+                          <div className="flex items-center justify-between mb-4">
+                            <button onClick={()=>openCategory(category)}
+                                    className="text-lg font-semibold text-gray-800 hover:text-blue-600 transition-colors flex items-center gap-2">
+                              <span className="dot" style={{ backgroundColor: data.color || '#94a3b8' }}></span>
+                              {category}
+                            </button>
+                            <div className="flex items-center gap-2">
+                              {/* Pastel swatch popover */}
+                              <div className="relative">
+                                <button
+                                  title="Set color"
+                                  onClick={() => setColorPickerFor(prev => prev === category ? null : category)}
+                                  className="text-gray-700 hover:bg-gray-100 p-2 rounded-lg transition-colors flex items-center gap-2">
+                                  <Palette />
+                                </button>
+                                {colorPickerFor === category && (
+                                  <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow p-3 z-10 w-56">
+                                    <div className="text-xs text-gray-600 mb-2">Choose color</div>
+                                    <div className="grid grid-cols-6 gap-2 mb-2">
+                                      {PASTEL_COLORS.map((hex) => (
+                                        <button
+                                          key={hex}
+                                          title={hex}
+                                          onClick={() => setCategoryColor(category, hex)}
+                                          className={`h-7 w-7 rounded-md border ${data.color === hex ? 'ring-2 ring-blue-500 border-blue-500' : 'border-gray-300'}`}
+                                          style={{ backgroundColor: hex }}
+                                        />
+                                      ))}
+                                    </div>
+                                    <div className="mt-1 flex items-center justify-between">
+                                      <button className="text-sm text-gray-600 hover:underline" onClick={() => setCategoryColor(category, null)}>
+                                        Clear
+                                      </button>
+                                      <button className="text-sm text-blue-600 hover:underline" onClick={() => setColorPickerFor(null)}>
+                                        Done
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              <button onClick={()=>setEditingBudget(category)}
+                                      className="text-blue-600 hover:bg-blue-100 p-2 rounded-lg"><Edit3/></button>
+                              {Object.keys(expenses).length>1 && (
+                                <button onClick={()=>setDeleteConfirmation(category)}
+                                        className="text-red-600 hover:bg-red-100 p-2 rounded-lg"><Trash2/></button>
+                              )}
+                            </div>
+                          </div>
+
+                          {editingBudget===category ? (
+                            <div className="space-y-3">
+                              <div className="grid grid-cols-2 gap-2">
+                                <input type="number" step="0.01" defaultValue={data.budgetEur}
+                                       className="border border-gray-300 rounded px-3 py-2 text-sm" id={`b-eur-${category}`}/>
+                                <input type="number" step="0.01" defaultValue={data.budgetInr}
+                                       className="border border-gray-300 rounded px-3 py-2 text-sm" id={`b-inr-${category}`}/>
+                              </div>
+                              <div className="flex gap-2">
+                                <button onClick={()=>{
+                                          const eur=document.getElementById(`b-eur-${category}`).value;
+                                          const inr=document.getElementById(`b-inr-${category}`).value;
+                                          updateBudget(category, eur, inr);
+                                        }}
+                                        className="bg-green-600 text-white px-4 py-1 rounded text-sm hover:bg-green-700">Save</button>
+                                <button onClick={()=>setEditingBudget(null)}
+                                        className="bg-gray-500 text-white px-4 py-1 rounded text-sm hover:bg-gray-600">Cancel</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                  <div className="text-sm text-gray-500">Spent</div>
+                                  <div className="font-semibold text-gray-800">€{data.eur.toFixed(2)}</div>
+                                  <div className="text-sm text-gray-600">₹{data.inr.toFixed(0)}</div>
+                                </div>
+                                <div>
+                                  <div className="text-sm text-gray-500">Remaining</div>
+                                  <div className="font-semibold text-gray-800">€{(data.budgetEur - data.eur).toFixed(2)}</div>
+                                  <div className="text-sm text-gray-600">₹{(data.budgetInr - data.inr).toFixed(0)}</div>
+                                </div>
+                              </div>
+
+                              <div className="mb-4">
+                                <div className="flex justify-between items-center mb-2">
+                                  <span className="text-sm text-gray-600">Budget Progress</span>
+                                  <span className={`text-sm font-medium ${getSpendingStatus(data.eur, data.budgetEur).textColor}`}>
+                                    {getSpendingStatus(data.eur, data.budgetEur).text} ({Math.min((data.eur/data.budgetEur)*100,100).toFixed(1)}%)
+                                  </span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div className={`${getSpendingStatus(data.eur, data.budgetEur).color} h-2 rounded-full transition-all`}
+                                       style={{ width: `${Math.min((data.eur/data.budgetEur)*100,100)}%` }}></div>
+                                </div>
+                              </div>
+
+                              <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
+                                Budget: €{data.budgetEur.toFixed(2)} | ₹{data.budgetInr.toFixed(0)}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* ------- CATEGORY DETAIL VIEW ------- */}
+            {activeTab==='category' && selectedCategory && (
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <button onClick={backToMain}
+                          className="flex items-center gap-2 text-gray-700 hover:text-black">
+                    <ArrowLeft/> <span className="font-medium">Back</span>
+                  </button>
+                </div>
+
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <span className="dot" style={{ backgroundColor: expenses[selectedCategory].color || '#94a3b8' }}></span>
+                    <h2 className="text-2xl font-semibold">{selectedCategory}</h2>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-500">Spent</div>
+                    <div className="font-semibold">
+                      €{expenses[selectedCategory].eur.toFixed(2)} | ₹{expenses[selectedCategory].inr.toFixed(0)}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      Budget: €{expenses[selectedCategory].budgetEur.toFixed(2)} | ₹{expenses[selectedCategory].budgetInr.toFixed(0)}
+                    </div>
+                  </div>
+                </div>
+
+                <h3 className="text-lg font-semibold mb-3">Transactions</h3>
+                {categoryTxns(selectedCategory).length===0 ? (
+                  <div className="text-gray-500">No transactions yet in this category.</div>
+                ) : (
+                  <>
+                    {(showAllCatTxns ? categoryTxns(selectedCategory) : categoryTxns(selectedCategory).slice(0,5))
+                      .map(txn=>(
+                        <div key={txn.id} className="border border-gray-200 rounded-lg p-4 mb-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="font-medium text-gray-800">{txn.timestamp}</div>
+                              <div className="text-sm text-gray-500">
+                                €{txn.eurAmount.toFixed(2)} | ₹{txn.inrAmount.toFixed(0)}
+                                {txn.edited && <span className="ml-2 text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-700">edited</span>}
+                              </div>
+                            </div>
+                            {editingTxnId!==txn.id ? (
+                              <div className="text-right">
+                                <div className="font-semibold">{txn.currency==='EUR'?'€':'₹'}{txn.amount.toFixed(2)}</div>
+                                <button onClick={()=>startEditTxn(txn)} className="text-blue-600 hover:underline text-sm">Edit</button>
+                              </div>
+                            ) : (
+                              <div className="text-right space-y-2">
+                                <div className="flex gap-2">
+                                  <input type="number" step="0.01" value={editForm.amount}
+                                         onChange={e=>setEditForm(f=>({...f,amount:e.target.value}))}
+                                         className="border border-gray-300 rounded px-2 py-1 w-28"/>
+                                  <select value={editForm.currency}
+                                          onChange={e=>setEditForm(f=>({...f,currency:e.target.value}))}
+                                          className="border border-gray-300 rounded px-2 py-1">
+                                    <option value="EUR">EUR (€)</option>
+                                    <option value="INR">INR (₹)</option>
+                                  </select>
+                                </div>
+                                <div className="flex gap-2 justify-end">
+                                  <button onClick={()=>saveEditTxn(txn)} className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Save</button>
+                                  <button onClick={cancelEditTxn} className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600">Cancel</button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    }
+                    <div className="mt-2">
+                      <button onClick={()=>setShowAllCatTxns(s=>!s)} className="text-blue-700 hover:underline">
+                        {showAllCatTxns ? 'Show last 5' : 'Show all'}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* ------- HISTORY TAB ------- */}
+            {activeTab==='history' && (
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h2 className="text-xl font-semibold mb-6 flex items-center gap-2"><TrendingUp/> Expense History</h2>
+                {expenseHistory.length===0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-gray-400 text-lg mb-2">No expenses recorded yet</div>
+                    <div className="text-gray-500">Start adding expenses to see them here</div>
+                  </div>
+                ) : (
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    {expenseHistory.map(entry=>(
+                      <div key={entry.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-800">{entry.category}</div>
+                            <div className="text-sm text-gray-600 mt-1">
+                              {entry.timestamp}
+                              {entry.edited && <span className="ml-2 text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-700">edited</span>}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-semibold">{entry.currency==='EUR'?'€':'₹'}{entry.amount.toFixed(2)}</div>
+                            <div className="text-sm text-gray-500">€{entry.eurAmount.toFixed(2)} | ₹{entry.inrAmount.toFixed(0)}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Delete confirmation modal */}
+            {deleteConfirmation && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl p-6 max-w-md mx-4">
+                  <div className="flex items-center gap-3 mb-4"><AlertCircle size={24}/><h3 className="text-lg font-semibold">Confirm Delete</h3></div>
+                  <p className="text-gray-600 mb-6">Are you sure you want to delete “{deleteConfirmation}”? This also removes all its expense history.</p>
+                  <div className="flex gap-3 justify-end">
+                    <button onClick={()=>setDeleteConfirmation(null)} className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                    <button onClick={()=>deleteCategory(deleteConfirmation)} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<ExpenseTracker/>);
+  </script>
 </body>
 </html>
